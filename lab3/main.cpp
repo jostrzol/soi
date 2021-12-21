@@ -8,20 +8,21 @@
 #include <sstream>
 #include <string>
 #include <queue>
+#include <mutex>
 
 #define M 10
 
 template <class T, int N>
 struct SyncQueue
 {
-    std::binary_semaphore mutex{1};
+    std::mutex mutex;
     std::counting_semaphore<N> full{0};
     std::counting_semaphore<N> empty{N};
     std::queue<T> queue;
     std::string name;
 };
 
-std::binary_semaphore stdout_mutex(1);
+std::mutex stdout_mutex;
 std::chrono::milliseconds consumer_timeout(100);
 int max_produced;
 
@@ -36,8 +37,8 @@ void run_producer(
         for (auto &b : buffers)
         {
             b->empty.acquire();
-            b->mutex.acquire();
-            stdout_mutex.acquire();
+            const std::lock_guard<std::mutex> buffer_lock(b->mutex);
+            const std::lock_guard<std::mutex> stdout_lock(stdout_mutex);
 
             b->queue.push(value);
             std::cout << "Producer '" << name
@@ -47,8 +48,6 @@ void run_producer(
                       << b->queue.size() << "/" << M
                       << " places occupied.\n";
 
-            stdout_mutex.release();
-            b->mutex.release();
             b->full.release();
         }
     }
@@ -62,8 +61,8 @@ void run_consumer(
     while (true)
     {
         buffer.full.acquire();
-        buffer.mutex.acquire();
-        stdout_mutex.acquire();
+        const std::lock_guard<std::mutex> buffer_lock(buffer.mutex);
+        const std::lock_guard<std::mutex> stdout_lock(stdout_mutex);
 
         T value = buffer.queue.front();
         buffer.queue.pop();
@@ -74,8 +73,6 @@ void run_consumer(
                   << buffer.queue.size() << "/" << M
                   << " places occupied.\n";
 
-        stdout_mutex.release();
-        buffer.mutex.release();
         buffer.empty.release();
     }
 }

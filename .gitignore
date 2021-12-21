@@ -2,4 +2,6 @@ minix-toolkit/minix_usr
 minix-toolkit/backups/auto
 minix-toolkit/minix203.img.*
 minix-toolkit
+**/*.o
 archives
+lab3/consumer-producer
