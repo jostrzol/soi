@@ -1,30 +1,41 @@
 #include <iostream>
 #include <string>
 #include <thread>
-#include <vector>
 #include <algorithm>
-#include <semaphore>
 #include <chrono>
 #include <sstream>
 #include <string>
 #include <queue>
 #include <mutex>
+#include <semaphore.h>
 
 #define M 10
+
+const std::chrono::milliseconds C_TIMEOUT(100);
+std::mutex stdout_mutex;
+int max_produced;
 
 template <class T, int N>
 struct SyncQueue
 {
     std::mutex mutex;
-    std::counting_semaphore<N> full{0};
-    std::counting_semaphore<N> empty{N};
+    sem_t full;
+    sem_t empty;
     std::queue<T> queue;
     std::string name;
-};
 
-std::mutex stdout_mutex;
-std::chrono::milliseconds consumer_timeout(100);
-int max_produced;
+    SyncQueue(const std::string &name)
+    {
+        sem_init(&full, 0, 0);
+        sem_init(&empty, 0, N);
+        this->name = name;
+    }
+    ~SyncQueue()
+    {
+        sem_destroy(&full);
+        sem_destroy(&empty);
+    }
+};
 
 template <class T, int N>
 void run_producer(
@@ -36,8 +47,9 @@ void run_producer(
     {
         for (auto &b : buffers)
         {
-            b->empty.acquire();
-            const std::lock_guard<std::mutex> buffer_lock(b->mutex);
+            sem_wait(&b->empty);
+            const std::lock_guard<std::mutex>
+                buffer_lock(b->mutex);
             const std::lock_guard<std::mutex> stdout_lock(stdout_mutex);
 
             b->queue.push(value);
@@ -48,7 +60,7 @@ void run_producer(
                       << b->queue.size() << "/" << M
                       << " places occupied.\n";
 
-            b->full.release();
+            sem_post(&b->full);
         }
     }
 }
@@ -60,8 +72,9 @@ void run_consumer(
 {
     while (true)
     {
-        buffer.full.acquire();
-        const std::lock_guard<std::mutex> buffer_lock(buffer.mutex);
+        sem_wait(&buffer.full);
+        const std::lock_guard<std::mutex>
+            buffer_lock(buffer.mutex);
         const std::lock_guard<std::mutex> stdout_lock(stdout_mutex);
 
         T value = buffer.queue.front();
@@ -73,7 +86,7 @@ void run_consumer(
                   << buffer.queue.size() << "/" << M
                   << " places occupied.\n";
 
-        buffer.empty.release();
+        sem_post(&buffer.empty);
     }
 }
 
@@ -105,10 +118,7 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    SyncQueue<int, M> q0, q1, q2;
-    q0.name = "q0";
-    q1.name = "q1";
-    q2.name = "q2";
+    SyncQueue<int, M> q0("q0"), q1("q1"), q2("q2");
 
     std::thread p0([&]()
                    { run_producer<int, M>("p0", 0, {&q0, &q1}); });
@@ -124,7 +134,7 @@ int main(int argc, char **argv)
     p0.join();
     p1.join();
 
-    std::this_thread::sleep_for(consumer_timeout);
+    std::this_thread::sleep_for(C_TIMEOUT);
 
     c0.detach();
     c1.detach();

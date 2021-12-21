@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/consumer-producer",
             "args": [
-                "0"
+                "100"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
