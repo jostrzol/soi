@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/default.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/markdown-it-texmath/css/texmath.min.css">
+<link rel="stylesheet" href="file:////home/tuco/.vscode-server/extensions/goessner.mdmath-2.7.4/themes/default/style.css">
+
+</head>
+<body class="markdown-body">
+<div  ></div>
+<div style="padding: 2% 5%">
+<h1 style="text-align: center;">
+<div style="color:grey; font-size: 0.6em;">Jakub Ostrzołek</div>
+<div>SOI - lab 3</div>
+</h1>
+<h2 id="wykorzystane-technologie-i-biblioteki">Wykorzystane technologie i biblioteki</h2>
+<ul>
+<li>Linux</li>
+<li>C++20 (gcc 11)</li>
+<li><code>&lt;queue&gt;</code></li>
+<li><code>&lt;thread&gt;</code></li>
+<li><code>&lt;semaphore&gt;</code></li>
+<li><code>&lt;iostream&gt;</code></li>
+<li><code>&lt;initializer_list&gt;</code></li>
+</ul>
+<h2 id="plan-wykonania-zadania">Plan wykonania zadania</h2>
+<ol>
+<li>Stworzenie template'u struktury <code>SyncQueue&lt;class T, int N&gt;</code>:
+<ul>
+<li>pole <code>std::queue&lt;T&gt;</code> - kolejka FIFO</li>
+<li>pole <code>std::binary_semaphore mutex(1)</code> - czy kolejka jest wolna do zapisu / odczytu</li>
+<li>pole <code>std::counting_semaphore&lt;N&gt; full(0)</code> - ilość zapełnionych miejsc w danej kolejce</li>
+<li>pole <code>std::counting_semaphore&lt;N&gt; empty(N)</code> - ilość pustych miejsc w danej kolejce</li>
+</ul>
+</li>
+<li>Zdefiniowanie długości kolejek: <code>#define M 10</code></li>
+<li>Stworzenie 3 kolejek: <code>SyncQueue&lt;int, M&gt; q0, q1, q2</code></li>
+<li>Stworzenie template'u funkcji producentów <code>void run_producer&lt;class T, int N&gt; (T value, std::initializer_list&lt;SyncQueue&lt;T, N&gt;&gt; buffers)</code>:
+<ul>
+<li>w nieskończonej pętli:
+<ul>
+<li>dla każdego bufora <code>b</code> z <code>buffers</code>:
+<ul>
+<li><code>b.empty.acquire();</code></li>
+<li><code>b.mutex.acquire();</code></li>
+<li><code>b.queue.push(value);</code></li>
+<li><code>b.mutex.release();</code></li>
+<li><code>b.full.release();</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Stworzenie template'u funkcji konsumentów <code>void run_consumer&lt;class T, int N&gt; (SyncQueue&lt;T, N&gt; buffer)</code>:
+<ul>
+<li>w nieskończonej pętli:
+<ul>
+<li><code>buffer.full.acquire();</code></li>
+<li><code>buffer.mutex.acquire();</code></li>
+<li><code>T value = buffer.queue.front()</code></li>
+<li><code>buffer.queue.pop();</code></li>
+<li><code>buffer.mutex.release();</code></li>
+<li><code>buffer.empty.release();</code></li>
+<li>wypisz <code>value</code> do stdout</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Stworzenie wątków 2 producentów:
+<ul>
+<li><code>std::thread p0 (run_producer&lt;int, M&gt;, 0, q0, q1)</code> - zapełnia na zmianę <code>q0</code> i <code>q1</code> wartościami <code>0</code></li>
+<li><code>std::thread p1 (run_producer&lt;int, M&gt;, 1, q1, q2)</code> - zapełnia na zmianę <code>q1</code> i <code>q2</code> wartościami <code>1</code></li>
+</ul>
+</li>
+<li>Stworzenie wątków 3 kosumentów:
+<ul>
+<li><code>std::thread c0 (run_consumer&lt;int, M&gt;, q0)</code> - wyciąga wartość z <code>q0</code> i wypisuje ją do stdout</li>
+<li><code>std::thread c1 (run_consumer&lt;int, M&gt;, q1)</code> - wyciąga wartość z <code>q1</code> i wypisuje ją do stdout</li>
+<li><code>std::thread c2 (run_consumer&lt;int, M&gt;, q2)</code> - wyciąga wartość z <code>q2</code> i wypisuje ją do stdout</li>
+</ul>
+</li>
+<li>Uruchomienie wszystkich wątków</li>
+</ol>
+
+</body>
+</html>

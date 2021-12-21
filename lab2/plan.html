@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/default.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/markdown-it-texmath/css/texmath.min.css">
+<link rel="stylesheet" href="file:////root/.vscode-server/extensions/goessner.mdmath-2.7.4/themes/default/style.css">
+
+</head>
+<body class="markdown-body">
+<div style="padding: 2% 5%">
+<h1 style="text-align: center;">
+<div style="color:grey; font-size: 0.6em;">Jakub Ostrzołek</div>
+<div>SOI - lab 2</div>
+</h1>
+<h2 id="plan-wykonania-zadania">Plan wykonania zadania</h2>
+<h3 id="główne-kroki">Główne kroki</h3>
+<ul>
+<li><code>src/kernel/proc.h</code>
+<ul>
+<li>+ zmienna <code>int TIMES_A</code> wskazująca ile razy powinien wykonać się proces z grupy A</li>
+<li>+ zmienna <code>int TIMES_B</code> wskazująca ile razy powinien wykonać się proces z grupy B</li>
+<li>+ zmienna <code>int PROC_SCHED_COUNTER</code> wyznaczająca pozostałą liczbę wykonań obecnego procesu do zmiany procesu na następny w kolejce</li>
+<li>+ zmienna <code>int PROC_GROUP_INIT</code> wyznaczająca aktualną grupę dla nowych procesów</li>
+<li>+ zmienna <code>int PROC_GROUP_INIT_COUNTER</code> wyznaczająca pozostałą liczbę procesów do zainicjowania grupą <code>PROC_GROUP_INIT</code>, przed zmianą <code>PROC_GROUP_INIT</code> na grupę przeciwną</li>
+<li><code>struct proc</code>
+<ul>
+<li>+ pole <code>int group</code> wskazujące na grupę procesu w sposób: 0 -&gt; A; 1 -&gt; B</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>src/kernel/proc.c</code>
+<ul>
+<li><code>sched()</code>
+<ul>
+<li>jeśli <code>PROC_SCHED_COUNTER == 0</code> - przesuń kolejkę i ustaw licznik na <code>TIMES_X</code>, gdzie <code>X</code> to grupa kolejnego procesu w kolejce</li>
+<li>w przeciwnym przypadku - nie przesuwaj kolejki</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>src/kernel/system.c</code>
+<ul>
+<li><code>do_fork()</code>
+<ul>
+<li>+ inicjalizacja zmiennej <code>group</code> w procesach klasy <code>USER</code> z użyciem <code>PROC_GROUP_INIT</code> i <code>PROC_GROUP_INIT_COUNTER</code></li>
+</ul>
+</li>
+<li>+ <code>do_setpercenta(m_ptr)</code>
+<ul>
+<li><code>int percent_a</code> - z parametru z <code>m_ptr</code></li>
+<li><code>int percent_b = 100-percent_a</code></li>
+<li><code>int gcd</code> - największa wspólna wielokrotność <code>percent_a</code> i <code>percent_b</code></li>
+<li><code>TIMES_A = percent_a/gcd</code></li>
+<li><code>TIMES_B = percent_b/gcd</code></li>
+</ul>
+</li>
+<li><code>systask()</code>
+<ul>
+<li>dodać <code>do_setpercenta()</code> do switcha zadań systemowych dla case <code>SYS_SETPERCENTA</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>include/minix/com.h</code>
+<ul>
+<li>+ stała <code>SYS_SETPERCENTA</code></li>
+</ul>
+</li>
+<li><code>src/kernel/main.c</code>
+<ul>
+<li><code>main()</code>
+<ul>
+<li>+ inicjalizacja zmiennych globalnych dodanych w <code>src/kernel/proc.h</code></li>
+<li>+ inicjalizacja zmiennej <code>group</code> dla procesów tworzonych w <code>main()</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>+ wywołania systemowe (na podstawie poprzedniego labolatorium):
+<ul>
+<li><code>SETPERCENTA</code> - przekazuje kontrolę do zadania systemowego <code>SYS_SETPERCENTA</code></li>
+<li><code>SETGROUP</code> - zmienia grupę aktualnemu procesowi</li>
+</ul>
+</li>
+</ul>
+<h3 id="opcjonalne-kroki">Opcjonalne kroki</h3>
+<ul>
+<li><code>kernel/clock.c</code>
+<ul>
+<li>+ zmienna <code>int EFFECTIVE_SCHED_RATE</code> i podmienienie w reszcie kodu stałej <code>SCHED_RATE</code> nową zmienną</li>
+</ul>
+</li>
+<li><code>src/kernel/system.c</code>
+<ul>
+<li><code>do_setpercenta(m_ptr)</code>
+<ul>
+<li>+ ustawianie <code>EFFECTIVE_SCHED_RATE</code> na odpowiednie ułamki <code>SCHED_RATE</code> tak, aby nie zatykać systemu operacyjnego uruchamianiem np. 99 razy tego samego procesu z rzędu</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="testowanie">Testowanie</h2>
+<ul>
+<li><code>proc_a.c</code>
+<ul>
+<li>zmiana swojej grupy na A za pomocą wywołania systemowego <code>SETGROUP</code></li>
+<li>wykonanie kosztownej operacji</li>
+</ul>
+</li>
+<li><code>proc_b.c</code>
+<ul>
+<li>zmiana swojej grupy na B za pomocą wywołania systemowego <code>SETGROUP</code></li>
+<li>wykonanie tej samej kosztownej operacji co w <code>proc_a.c</code></li>
+</ul>
+</li>
+<li>kompilacja -&gt; <code>proc_a</code>, <code>proc_b</code></li>
+<li><code>main.c</code>
+<ul>
+<li>zmierzenie czasu wykonywania się <code>proc_a</code> i <code>proc_b</code> za pomocą biblioteki <code>&lt;time.h&gt;</code></li>
+<li>wyświetlenie wyników</li>
+</ul>
+</li>
+</ul>
+
+</body>
+</html>
