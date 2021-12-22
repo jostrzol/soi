@@ -6,19 +6,18 @@
 #include <sstream>
 #include <string>
 #include <queue>
-#include <mutex>
 #include <semaphore.h>
 
 #define M 10
 
 const std::chrono::milliseconds C_TIMEOUT(100);
-std::mutex stdout_mutex;
 int max_produced;
+sem_t stdout_mutex;
 
 template <class T, int N>
 struct SyncQueue
 {
-    std::mutex mutex;
+    sem_t mutex;
     sem_t full;
     sem_t empty;
     std::queue<T> queue;
@@ -28,12 +27,14 @@ struct SyncQueue
     {
         sem_init(&full, 0, 0);
         sem_init(&empty, 0, N);
+        sem_init(&mutex, 0, 1);
         this->name = name;
     }
     ~SyncQueue()
     {
         sem_destroy(&full);
         sem_destroy(&empty);
+        sem_destroy(&mutex);
     }
 };
 
@@ -48,9 +49,8 @@ void run_producer(
         for (auto &b : buffers)
         {
             sem_wait(&b->empty);
-            const std::lock_guard<std::mutex>
-                buffer_lock(b->mutex);
-            const std::lock_guard<std::mutex> stdout_lock(stdout_mutex);
+            sem_wait(&b->mutex);
+            sem_wait(&stdout_mutex);
 
             b->queue.push(value);
             std::cout << "Producer '" << name
@@ -60,6 +60,8 @@ void run_producer(
                       << b->queue.size() << "/" << M
                       << " places occupied.\n";
 
+            sem_post(&stdout_mutex);
+            sem_post(&b->mutex);
             sem_post(&b->full);
         }
     }
@@ -73,9 +75,8 @@ void run_consumer(
     while (true)
     {
         sem_wait(&buffer.full);
-        const std::lock_guard<std::mutex>
-            buffer_lock(buffer.mutex);
-        const std::lock_guard<std::mutex> stdout_lock(stdout_mutex);
+        sem_wait(&buffer.mutex);
+        sem_wait(&stdout_mutex);
 
         T value = buffer.queue.front();
         buffer.queue.pop();
@@ -86,6 +87,8 @@ void run_consumer(
                   << buffer.queue.size() << "/" << M
                   << " places occupied.\n";
 
+        sem_post(&stdout_mutex);
+        sem_post(&buffer.mutex);
         sem_post(&buffer.empty);
     }
 }
@@ -119,6 +122,7 @@ int main(int argc, char **argv)
     }
 
     SyncQueue<int, M> q0("q0"), q1("q1"), q2("q2");
+    sem_init(&stdout_mutex, 0, 1);
 
     std::thread p0([&]()
                    { run_producer<int, M>("p0", 0, {&q0, &q1}); });
@@ -140,5 +144,6 @@ int main(int argc, char **argv)
     c1.detach();
     c2.detach();
 
+    sem_destroy(&stdout_mutex);
     return 0;
 }
