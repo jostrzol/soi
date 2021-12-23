@@ -12,19 +12,26 @@ fi
 
 # prepare pipe and clean
 pipe="/tmp/paralelize_pipe_$router"
-set
 clean() {
     # kill children
-    # echo "CHILDREN:"
-    # echo "========="
-    # ps -o pid --ppid $$ | tail +2
-    # echo "========="
-    ps -o pid --ppid $$ | tail +2 | xargs kill 2>/dev/null
-    ps -o pid --ppid $$ | tail +2 | xargs kill -9 2>/dev/null
-    # echo "AFTER KILL:"
-    # echo "========="
-    # ps -o pid --ppid $$ | tail +2
-    # echo "========="
+    echo \$\$=$router
+    echo "CHILDREN:"
+    echo "========="
+    ps -o pid,session --ppid $$
+    echo "---------"
+    ps -o pid -s $$
+    echo "========="
+
+    to_kill=$(ps -o pid= --ppid $$)
+    kill $to_kill 2>/dev/null
+    kill -9 $to_kill 2>/dev/null
+
+    echo "AFTER KILL:"
+    echo "========="
+    ps -o pid= --ppid $$
+    echo "---------"
+    ps -o pid= -s $$
+    echo "========="
     # remove pipe
     rm -f $pipe
 
@@ -37,7 +44,9 @@ command="$1"
 shift
 
 start_process() {
-    $command "$1"
+    $command "$1" &
+    trap 'echo "KILLING $command $1 ($!|$$)"; kill $!; kill -9 $!; exit' INT TERM
+    wait
     echo "done $1" >$pipe
 }
 
@@ -47,14 +56,17 @@ for _ in $(seq $N); do
         break
     fi
     start_process "$1" &
+    echo STARTING "$!"
     shift
 done
+
+clean
 
 total_read=0
 until test $total_read -eq $to_run; do
     read=$(cat $pipe | wc -l)
     total_read=$((total_read + read))
-    for _ in $(seq $read); do
+    for _ in $(seq "$read"); do
         if test -z "$1"; then break; fi
         start_process "$1" &
         shift
