@@ -32,7 +32,7 @@ trap 'clean' INT TERM
 mkfifo "$pipe"
 
 # process pipe wrapper
-start_process() {
+start_daemon() {
     $command "$1"
     echo "done $1" >$pipe
 }
@@ -42,7 +42,7 @@ for _ in $(seq $N); do
     if test -z "$1"; then
         break
     fi
-    start_process "$1" &
+    start_daemon "$1" &
     shift
 done
 
@@ -54,7 +54,7 @@ until test $total_read -eq $to_run; do
 
     for _ in $(seq "$read"); do
         if test -z "$1"; then break; fi
-        start_process "$1" &
+        start_daemon "$1" &
         shift
     done
 done
