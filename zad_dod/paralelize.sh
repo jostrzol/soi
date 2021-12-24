@@ -1,22 +1,22 @@
 #!/bin/sh
 
-# global constants
-N=4                            # max number of concurrent daemons to run
-name=$(basename "$0")          # name of the script
-pipe="/tmp/paralelize_pipe_$$" # interprocess comunication pipe
-command="$1"                   # command to be run for daemons
-shift                          #
-to_run=$#                      # total number of daemons to run
-
 # check args
+name=$(basename "$0") # name of the script
 if test $# -lt 2; then
     echo "usage:  $name PROCESS ARGUMENT [ARGUMENT...]" >&2
     exit 1
 fi
 
+# global constants
+N=4                            # max number of concurrent daemons to run
+pipe="/tmp/paralelize_pipe_$$" # interprocess comunication pipe
+command="$1"                   # command to be run for daemons
+shift                          #
+to_run=$#                      # total number of daemons to run
+
 # ensure clean exit
 clean() {
-    # kill wrappers for access to pipe
+    # kill wrappers for guaranteed access to pipe
     to_kill=$(ps -o pid= --ppid $$)
     kill $to_kill 2>/dev/null
     kill -9 $to_kill 2>/dev/null
