@@ -5,3 +5,4 @@ minix-toolkit
 **/*.o
 archives
 lab3/consumer-producer
+**/main
