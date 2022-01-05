@@ -6,3 +6,4 @@ minix-toolkit
 archives
 lab3/consumer-producer
 **/main
+.vscode
