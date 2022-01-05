@@ -60,12 +60,7 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    Semaphore stdout_mutex(1);
-
-    SyncQueue<int, M>
-        q0(stdout_mutex, "q0"),
-        q1(stdout_mutex, "q1"),
-        q2(stdout_mutex, "q2");
+    SyncQueue<int, M> q0("q0"), q1("q1"), q2("q2");
 
     std::thread p0([&]()
                    { run_producer<int, M>(0, {&q0, &q1}); });

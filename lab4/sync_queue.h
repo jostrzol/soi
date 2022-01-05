@@ -11,7 +11,6 @@ class SyncQueue : protected Monitor
 private:
     Condition not_full, not_empty;
     std::queue<T> queue;
-    Semaphore &stdout_mutex;
 
 public:
     std::string name;
@@ -20,7 +19,7 @@ public:
     T pop();
     std::size_t size();
 
-    SyncQueue(Semaphore &stdout_mutex, std::string name);
+    SyncQueue(std::string name);
 };
 
 template <class T, int N>
@@ -29,14 +28,12 @@ void SyncQueue<T, N>::push(T item)
     enter();
     if (queue.size() == N)
         wait(not_full);
-    stdout_mutex.p();
 
     queue.push(item);
     std::cout << item << " -> " << name << " [ "
               << queue.size() << "/" << N
               << " ]\n";
 
-    stdout_mutex.v();
     if (queue.size() == 1)
         signal(not_empty);
     leave();
@@ -48,7 +45,6 @@ T SyncQueue<T, N>::pop()
     enter();
     if (queue.size() == 0)
         wait(not_empty);
-    stdout_mutex.p();
 
     T item = queue.front();
     queue.pop();
@@ -56,7 +52,6 @@ T SyncQueue<T, N>::pop()
               << queue.size() << "/" << N
               << " ]\n";
 
-    stdout_mutex.v();
     if (queue.size() == N - 1)
         signal(not_full);
     leave();
@@ -70,5 +65,5 @@ std::size_t SyncQueue<T, N>::size()
 }
 
 template <class T, int N>
-SyncQueue<T, N>::SyncQueue(Semaphore &stdout_mutex, std::string name)
-    : stdout_mutex(stdout_mutex), name(name) {}
+SyncQueue<T, N>::SyncQueue(std::string name)
+    : name(name) {}
