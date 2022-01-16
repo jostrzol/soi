@@ -41,4 +41,5 @@ public:
     std::size_t wastedSpace();
     void listFiles(std::ostream &os);
     void info(std::ostream &os);
+    void mapBlocks(std::ostream &os);
 };

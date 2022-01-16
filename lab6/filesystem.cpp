@@ -317,3 +317,25 @@ void Filesystem::info(std::ostream &os)
     os << "Wasted space\t" << wastedSpace() << "\n";
     return;
 }
+
+void Filesystem::mapBlocks(std::ostream &os)
+{
+    os << std::left << std::setw(5) << "TYPE"
+       << " " << std::left << std::setw(8) << "SIZE"
+       << " INFO\n";
+    os << std::left << std::setw(5) << "SUPER"
+       << " " << std::left << std::setw(8) << SUPERBLOCK_SIZE
+       << " -\n";
+    for (auto &inode : getInodes())
+    {
+        os << std::left << std::setw(5) << "INODE"
+           << " " << std::left << std::setw(8) << INODE_SIZE
+           << " " << inode.name << "\n";
+    }
+    for (auto &datablock : getDatablocks())
+    {
+        os << std::left << std::setw(5) << "DATA"
+           << " " << std::left << std::setw(8) << DATABLOCK_SIZE
+           << " " << (datablock.is_taken ? "TAKEN" : "FREE") << "\n";
+    }
+}

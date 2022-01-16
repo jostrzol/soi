@@ -14,5 +14,4 @@ struct Datablock
     Datablock(std::fstream &file);
 
     void save(std::ostream &file);
-    void free();
 };

@@ -112,6 +112,13 @@ int main(int argc, const char *argv[])
 
         fs.info(std::cout);
     }
+    else if (command == "map")
+    {
+        if (argc != 3)
+            return -1;
+
+        fs.mapBlocks(std::cout);
+    }
     else
     {
         std::cerr << "Unrecognized command '" << command << "'. Possible commands:\n";
@@ -121,6 +128,7 @@ int main(int argc, const char *argv[])
         std::cerr << "\t* rm FILESYSTEM FILE\t\tremoves a file\n";
         std::cerr << "\t* ls FILESYSTEM\t\t\tlists all the files\n";
         std::cerr << "\t* info FILESYSTEM\t\tlists information about filesystem\n";
+        std::cerr << "\t* map FILESYSTEM\t\tlists all the blocks in the filesystem\n";
         return -5;
     }
 
