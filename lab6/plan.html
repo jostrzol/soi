@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/default.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/markdown-it-texmath/css/texmath.min.css">
+<link rel="stylesheet" href="file:////home/tuco/.vscode-server/extensions/goessner.mdmath-2.7.4/themes/default/style.css">
+
+</head>
+<body class="markdown-body">
+<div  ></div>
+<div style="padding: 2% 5%;">
+<div  ></div>
+<h1 style="text-align: center;">
+<div style="color:grey; font-size: 0.6em;">Jakub Ostrzołek</div>
+<div>SOI laboratorium 6</div>
+</h1>
+<h2 id="gc582c3b3wne-struktury">Główne struktury</h2>
+<ul>
+<li><code>struct Superblock</code>
+<ul>
+<li><code>char[2] magic_number</code> - identyfikator systemu plików</li>
+<li><code>unsigned int size</code> - rozmiar systemu plików</li>
+<li><code>Inode *inode_first</code> - wskaźnik na pierwszy Inode</li>
+<li><code>unsigned int inode_max</code> - maksymalna ilośc Inodów</li>
+<li><code>unsigned int inode_size</code> - rozmiar Inoda</li>
+<li><code>Datablock *datablock_first</code> - wskaźnik na pierwszy Datablock</li>
+<li><code>unsigned int datablock_max</code> - maksymalna ilośc Datablocków</li>
+<li><code>unsigned int datablock_size</code> - rozmiar Datablocku</li>
+</ul>
+</li>
+<li><code>struct Inode</code>
+<ul>
+<li><code>char *name</code> - nazwa pliku</li>
+<li><code>unsigned int size</code> - rozmiar pliku</li>
+<li><code>Datablock *datablock_first</code> - wskaźnik na pierwszy datablock pliku</li>
+<li><code>Inode *inode_next</code> - wskaźnik na kolejny Inode</li>
+</ul>
+</li>
+<li><code>struct Datablock</code>
+<ul>
+<li><code>void *data</code> - zawartość datablocku</li>
+<li><code>Datablock *datablock_next</code> - wskaźnik na kolejny datablock pliku</li>
+</ul>
+</li>
+</ul>
+<h2 id="interakcja-z-uc5bcytkownikiem">Interakcja z użytkownikiem</h2>
+<p>Program <code>my-fs</code>. Komendy:</p>
+<ul>
+<li><code>create</code> - tworzy system plików
+<ul>
+<li><code>FILEPATH</code> - ścieżka do pliku, w którym ma się znajdować system plików</li>
+</ul>
+</li>
+<li><code>cp-to</code> - kopiuje do systemu plików
+<ul>
+<li><code>FILESYSTEM</code> - ścieżka do pliku systemu plików</li>
+<li><code>SRC</code> - ścieżka pliku źródłowego</li>
+<li><code>DST</code> - ścieżka pliku docelowego</li>
+</ul>
+</li>
+<li><code>cp-from</code> - kopiuje z systemu plików
+<ul>
+<li><code>FILESYSTEM</code> - ścieżka do pliku systemu plików</li>
+<li><code>SRC</code> - ścieżka pliku źródłowego</li>
+<li><code>DST</code> - ścieżka pliku docelowego</li>
+</ul>
+</li>
+<li><code>ls</code> - wyświetla katalog systemu plików
+<ul>
+<li><code>FILESYSTEM</code> - ścieżka do pliku systemu plików</li>
+</ul>
+</li>
+<li><code>rm</code> - usuwa plik z systemu plików
+<ul>
+<li><code>FILESYSTEM</code> - ścieżka do pliku systemu plików</li>
+<li><code>FILE</code> - ścieżka do pliku do usunięcia</li>
+</ul>
+</li>
+<li><code>info</code> - wyświetla informacje ile bloków danego typu jest zajętych na ile możliwych</li>
+</ul>
+<p>Nie implementuję programu usuwającego system plików, bo zakładam, że można przeprowadzić taką operację z nadrzędnego systemu plików (<code>rm &lt;FILESYSTEM_PATH&gt;</code>)</p>
+<h2 id="fragmentacja">Fragmentacja</h2>
+<p>Planuję zaimplementować plik jako jednokierunkową listę Datablocków (jak widać po przybliżonej definicji struktur), dzięki czemu poszczególne datablocki danego pliku nie muszą być ustawione po kolei. W połączeniu z ograniczoną ilością datablocków i ich stałym rozmiarem, zjawisko fragmentacji zewnętrznej nie będzie problemem.<br>
+Niestety wadą takiego rozwiązania jest występowanie zjawiska fragmentacji wewnętrznej, która przy dużej ilości niewielkich plików może znacząco obniżyć efektywną pojemność systemu plików.</p>
+<div  ></div>
+</div>
+</body>
+</html>
